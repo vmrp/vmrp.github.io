@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>view mrp</title>
+    <script src="./dist/mrp.js"></script>
+    <script src="./public/js/vue.js"></script>
+    <script src="./public/js/utils.js"></script>
+    <script src="./vmrp_v1.0/midi.js"></script>
+    <style>
+        html,
+        body,
+        #app {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        #app {
+            margin: 0 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #main {
+            overflow: auto;
+            display: flex;
+            flex: 1;
+            min-width: 800px;
+            margin-top: 10px;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+        }
+
+        .red {
+            color: red;
+        }
+
+        .pointer {
+            cursor: pointer;
+        }
+
+        .selected {
+            background-color: gray;
+        }
+
+        #textShow {
+            display: flex;
+            flex-direction: column;
+            width: 400px;
+            height: 500px;
+            border: 1px solid black;
+            margin-left: 15px;
+        }
+
+        #textShow h2 {
+            font-size: 1em;
+            text-align: center;
+            border-bottom: 1px solid black;
+            line-height: 1.5em;
+            margin: 0;
+            padding: 10px;
+        }
+
+        #textShow textarea {
+            outline: none;
+            resize: none;
+            border: none;
+            flex: 1;
+            overflow-x: auto;
+        }
+
+        #bmp {
+            display: flex;
+            flex-direction: column;
+            width: 400px;
+            height: 500px;
+            border: 1px solid black;
+            margin-left: 15px;
+            box-sizing: border-box;
+        }
+
+        #bmp .header {
+            border-bottom: 1px solid black;
+            padding: 10px;
+        }
+
+        #bmp #img {
+            flex: 1;
+            margin: 10px;
+        }
+
+        #info {
+            margin-top: 10px;
+            height: 12em;
+            overflow: auto;
+        }
+
+        #fileList {
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div style="margin-top: 8px;">
+            <input type="file" id="files" @change="importFile($event)" style="display:none" />
+            <button @click="importFileBtn()">导入文件</button>
+        </div>
+        <div id="info">
+            <table>
+                <thead>
+                    <tr>
+                        <th>info</th>
+                        <th>FileName</th>
+                        <th>DisplayName</th>
+                        <th>Vendor</th>
+                        <th>Desc</th>
+                        <th>Appid</th>
+                        <th>Version</th>
+                        <th>BuilderVersion</th>
+                        <th>Screen</th>
+                        <th>Crc32</th>
+                        <th>Crc32OK</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <ul>
+                                <li>Len: {{info.MrpTotalLen}}</li>
+                                <li>Flag: {{info.Flag}}, Plat: {{info.Plat}}</li>
+                                <li>FileStart: {{info.FileStart}}</li>
+                                <li>MrpTotalLen: {{info.MrpTotalLen}}</li>
+                                <li>MRPHeaderSize: {{info.MRPHeaderSize}}</li>
+                                <li>AuthStr: {{info.AuthStr}}</li>
+                            </ul>
+                        </td>
+                        <td>{{info.FileName}}</td>
+                        <td><a :href="'/vmrp_v1.0/main.html?f='+f+'&title='+info.DisplayName">{{info.DisplayName}}</a>
+                        </td>
+                        <td>{{info.Vendor}}</td>
+                        <td>{{info.Desc}}</td>
+                        <td>LE: {{info.Appid}} <br> BE: {{info.AppidBE}}</td>
+                        <td>LE: {{info.Version}} <br> BE: {{info.VersionBE}}</td>
+                        <td>{{info.BuilderVersion}}</td>
+                        <td>{{info.ScreenWidth}}x{{info.ScreenHeight}}</td>
+                        <td>{{info.Crc32}}</td>
+                        <td :class="{ red: !info.Crc32OK }">{{info.Crc32OK}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="main">
+            <div id="fileList">
+                <table>
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>filePos</th>
+                            <th>fileLen</th>
+                            <th>filename</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(item,i) in files">
+                            <td>{{i+1}}</td>
+                            <td>{{item.filePos}}</td>
+                            <td>{{item.fileLen}}</td>
+                            <td class="pointer" :class="{red:isSound(item), selected:currentItem===item}"
+                                @click="show(item)">
+                                {{item.filename}}</td>
+                            <td>
+                                <div v-if="isSound(item)">
+                                    <button @click="play(item)" style="background-color: #7d8;">播放</button><br>
+                                    <button @click="stop(item)" style="background-color: #f77;">停止</button><br>
+                                </div>
+                                <button @click="download(item)">下载</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="textShow">
+                <h2>{{textShow.title}}</h2>
+                <textarea v-model="textShow.text"></textarea>
+            </div>
+            <div id="bmp">
+                <div class="header">
+                    <button @click="btnBmpDecr">-1</button>
+                    <button @click="btnBmpIncr">+1</button>
+                    <button @click="downloadBmp">保存</button>
+                    <span>{{bmp.w}}x{{bmp.h}}</span>
+                </div>
+                <div id="img">
+                    <img v-if="bmp.url" :src="bmp.url" :style="{width:bmp.w+'px',height:bmp.h+'px'}"
+                        style="border: 1px solid black;">
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="./public/js/viewMrp.js"></script>
+</body>
+
+</html>

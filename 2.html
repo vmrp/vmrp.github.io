@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="./public/js/nedb.min.js"></script>
+    <script src="./public/js/localforage.min.js"></script>
+</head>
+
+<body>
+    <canvas id="myCanvas" width="240" height="320" style="border: 1px solid black;"></canvas>
+    <script>
+        function component() {
+            const elememt = document.createElement('div');
+            elememt.innerHTML = ['hello', 'wobpack'].join(' ');
+            elememt.classList.add('hello');
+
+            const btn = document.createElement('button');
+            btn.innerHTML = 'click';
+            btn.onclick = function() {};
+            elememt.appendChild(btn);
+            return elememt;
+        }
+
+        document.body.appendChild(component());
+
+        var c = document.getElementById("myCanvas");
+        var ctx = c.getContext("2d");
+        const MOUSE_DOWN = 0;
+        const MOUSE_MOVE = 1;
+        const MOUSE_UP = 2;
+        let isMouseDown = false;
+        c.addEventListener("mousedown", function(ev) {
+            const rect = c.getBoundingClientRect();
+            const x = ev.clientX - rect.left;
+            const y = ev.clientY - rect.top;
+            isMouseDown = true;
+            event(MOUSE_DOWN, x, y);
+        });
+        c.addEventListener("mouseup", function(ev) {
+            const rect = c.getBoundingClientRect();
+            const x = ev.clientX - rect.left;
+            const y = ev.clientY - rect.top;
+            isMouseDown = false;
+            event(MOUSE_UP, x, y);
+        });
+        c.addEventListener("mousemove", function(ev) {
+            const rect = c.getBoundingClientRect();
+            const x = ev.clientX - rect.left;
+            const y = ev.clientY - rect.top;
+            if (isMouseDown) event(MOUSE_MOVE, x, y);
+        });
+
+
+        function drawRect(ctx, x, y, w, h, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, w, h);
+        }
+
+        function drawLine(ctx, x1, y1, x2, y2, color) {
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            // ctx.closePath();
+        }
+
+        function drawText(ctx, str, x, y, color) {
+            ctx.fillStyle = color;
+            ctx.font = "16px Arial";
+            ctx.fillText(str, x, y);
+        }
+
+        drawRect(ctx, 1, 1, 238, 318, "#888888");
+
+        drawLine(ctx, 2, 2, 238, 318, "#ff0000");
+        drawLine(ctx, 2, 318, 238, 2, "#0000ff");
+
+        drawText(ctx, "hello中国", 30, 30, "#ff0000");
+
+        drawRect(ctx, 50, 100, 20, 30, "#000088");
+        drawRect(ctx, 1, 0, 1, 1, "#000");
+        drawRect(ctx, 0, 1, 1, 1, "#000");
+
+        function foo() {
+            // 加速度g，x方向速度vx，y方向速度vy
+            const rectInit = {
+                x: 10,
+                y: 30,
+                w: 10,
+                h: 10,
+                g: 2,
+                vx: 3,
+                vy: -8,
+                color: "#ff0000"
+            };
+            let rect = {
+                x: 10,
+                y: 30,
+                w: 10,
+                h: 10,
+                g: 2,
+                vx: 3,
+                vy: -8,
+                color: "#ff0000"
+            };
+
+            function update() {
+                rect.x += rect.vx;
+                rect.y += rect.vy;
+                rect.vy += rect.g;
+                if (rect.y + rect.h >= ctx.canvas.height) { // 碰到地面
+                    rect.y = ctx.canvas.height - rect.h;
+                    rect.vy = -rect.vy * 0.5; // 速度相反并且每次碰到地面时速度降低
+                }
+                if (rect.x + rect.w >= ctx.canvas.width) {
+                    rect = JSON.parse(JSON.stringify(rectInit));
+                    clearInterval(timer);
+                }
+            }
+            const timer = setInterval(() => {
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                drawRect(ctx, rect.x, rect.y, rect.w, rect.h, rect.color);
+                update();
+            }, 30);
+        }
+        foo();
+
+        function event(code, p0, p1) {
+            drawRect(ctx, p0, p1, 1, 1, "#f00");
+        }
+    </script>
+</body>
+
+</html>

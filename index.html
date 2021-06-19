@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mrp</title>
+    <script src="./dist/mrp.js"></script>
+    <script src="./public/js/nedb.min.js"></script>
+    <script src="./public/js/localforage.min.js"></script>
+    <script src="./public/js/vue.js"></script>
+    <script src="./public/js/db.js"></script>
+    <script src="./public/js/utils.js"></script>
+    <style>
+        table {
+            border-collapse: collapse;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+        }
+
+        .red {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <a href="./vmrp_v1.0/main.html">vmrp_v1.0</a>
+
+        <form onsubmit="return false" style="display: inline-block;">
+            <input id="search" type="text" autocomplete="off" />
+            <input type="submit" @click="search()" value="搜索" />
+        </form>
+        <input type="checkbox" id="showAdmin" v-model="admin"><label for="showAdmin">显示高级功能</label>
+        <input type="file" id="files" multiple style="display:none" />
+        <button @click="importFile()" v-if="admin">导入文件</button>
+        <button @click="downloadData()" v-if="admin">下载数据</button>
+
+        <div style="margin: 10px;">
+            <button @click="prev()">上页</button>
+            <button @click="next()">下页</button>
+            当前页:{{page}}/{{totalPage}} 每页显示:{{pageSize}} 总数:{{total}}
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>info</th>
+                    <th>FileName</th>
+                    <th>DisplayName</th>
+                    <th>Vendor</th>
+                    <th>Desc</th>
+                    <th>Appid</th>
+                    <th>Version</th>
+                    <th>BuilderVersion</th>
+                    <th>Screen</th>
+                    <th>Crc32</th>
+                    <th>Crc32OK</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="item in items">
+                    <td>
+                        <ul>
+                            <li>Len: {{item.MrpTotalLen}}</li>
+                            <li>Flag: {{item.Flag}}</li>
+                            <li>Plat: {{item.Plat}}</li>
+                        </ul>
+                    </td>
+                    <td>
+                        <a v-if="admin" :href="'/viewMrp.html?f=/public/mrps/'+item.file">{{item.FileName}}</a>
+                        <span v-else>{{item.FileName}}</span>
+                    </td>
+                    <td>
+                        <a v-if="admin"
+                            :href="'/vmrp_v1.0/main.html?f=/public/temp/'+item.file+'&title='+item.DisplayName">{{item.DisplayName}}</a>
+                        <a v-else
+                            :href="'/vmrp_v1.0/main.html?f=/public/mrps/'+item.file+'&title='+item.DisplayName">{{item.DisplayName}}</a>
+                    </td>
+                    <td>{{item.Vendor}}</td>
+                    <td>{{item.Desc}}</td>
+                    <td>{{item.Appid}}</td>
+                    <td>{{item.Version}}</td>
+                    <td>{{item.BuilderVersion}}</td>
+                    <td>{{item.ScreenWidth}}x{{item.ScreenHeight}}</td>
+                    <td>{{item.Crc32}}</td>
+                    <td :class="{ red: !item.Crc32OK }">{{item.Crc32OK}}</td>
+                    <td>
+                        <button @click="del(item)" v-if="admin">删</button>
+                        <a :href="'/public/mrps/'+item.file" :download="item.file">下载</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="margin: 10px;">
+            <button @click="prev()">上页</button>
+            <button @click="next()">下页</button>
+        </div>
+    </div>
+    <script src="./public/js/index.js"></script>
+</body>
+
+</html>
